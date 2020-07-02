@@ -143,12 +143,10 @@ class SAMLAuthenticator(Authenticator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        print(self.saml_settings)
+
         if self.auto_IdP_metadata:
             idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(self.auto_IdP_metadata)
             self.saml_settings = OneLogin_Saml2_IdPMetadataParser.merge_settings(self.saml_settings, idp_data)
-        print(self.saml_settings)
-
 
     def login_url(self, base_url):
         return url_path_join(base_url, 'saml_login')
@@ -163,7 +161,7 @@ class SAMLAuthenticator(Authenticator):
             dataDict[key] = request.arguments[key][0].decode('utf-8')
 
         result = {
-            'https': 'on' if request == 'https' else 'off',
+            'https': 'on' if request.protocol == 'https' else 'off',
             'http_host': tornado.httputil.split_host_and_port(request.host)[0],
             'script_name': request.path,
             'server_port': tornado.httputil.split_host_and_port(request.host)[1],
@@ -182,6 +180,10 @@ class SAMLAuthenticator(Authenticator):
         auth = self.init_saml_auth(req)
 
         auth.process_response()
+        errors = auth.get_errors()
+        if errors:
+            self.log.warning("Errors are:\n" + "\n".join(errors))
+
         if not auth.is_authenticated():
             self.log.warning("Unauthorized login attempt.")
             return None
@@ -199,7 +201,7 @@ class SAMLAuthenticator(Authenticator):
             user = app.users[username]
         except KeyError:
             # first-time login, user not defined yet
-            user = None 
+            user = None
             auth_state = None
         else:
             auth_state = await user.get_auth_state()
@@ -233,7 +235,7 @@ class SAMLAuthenticator(Authenticator):
 
     def remove_expired_message_ids(self, message_history):
         now = time.time()
-        keys = [k for k, v in message_history.items() if v < now]
+        keys = [k for k, v in message_history.items() if not isinstance(v, int) or v < now]
         for k in keys:
             message_history.pop(k)
         return message_history
