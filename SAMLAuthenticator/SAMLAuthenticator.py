@@ -143,9 +143,11 @@ class SAMLAuthenticator(Authenticator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        print(self.saml_settings)
         if self.auto_IdP_metadata:
             idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(self.auto_IdP_metadata)
             self.saml_settings = OneLogin_Saml2_IdPMetadataParser.merge_settings(self.saml_settings, idp_data)
+        print(self.saml_settings)
 
 
     def login_url(self, base_url):
