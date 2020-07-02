@@ -1,0 +1,2 @@
+jupyterhub>=1.1.0
+python3-saml>=1.9.0
