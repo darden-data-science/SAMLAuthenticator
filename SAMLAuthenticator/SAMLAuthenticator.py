@@ -124,7 +124,7 @@ class SAMLAuthenticator(Authenticator):
     )
 
     metadata_url = Unicode(
-        default_value=r'/Shiboleth.sso/Metadata',
+        default_value=r'/Shibboleth.sso/Metadata',
         help=
         """
         The sub-url where the IdP will look for the metadata.
