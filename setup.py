@@ -56,7 +56,7 @@ setup_args = dict(
     python_requires     = ">=3.5",
     entry_points={
         'jupyterhub.authenticators': [
-            'saml_authenticator = SAMLAuthenticator:SAMLAuthenticator',
+            'SAMLAuthenticator = SAMLAuthenticator:SAMLAuthenticator',
         ],
     },
     classifiers         = [
