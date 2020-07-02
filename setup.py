@@ -36,7 +36,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the current package version.
 version_ns = {}
-with open(pjoin(here, 'SAMLauthenticator', '_version.py')) as f:
+with open(pjoin(here, 'SAMLAuthenticator', '_version.py')) as f:
     exec(f.read(), {}, version_ns)
 
 
