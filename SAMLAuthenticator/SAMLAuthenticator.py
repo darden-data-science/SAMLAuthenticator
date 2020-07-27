@@ -7,6 +7,7 @@ from traitlets import Dict, Unicode, Bool
 import time
 
 import tornado.httputil
+from tornado.httputil import url_concat
 from tornado import web
 
 from lxml import etree
@@ -19,15 +20,33 @@ from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 
 class SAMLLoginHandler(BaseHandler):
     def get(self):
-        req = self.authenticator.prepare_tornado_request(self.request)
-        auth = self.authenticator.init_saml_auth(req)
-        return self.redirect(auth.login())
+        if not self.current_user:
+            req = self.authenticator.prepare_tornado_request(self.request)
+            auth = self.authenticator.init_saml_auth(req)
+            # This sets up the RelayState parameter to be this handler again (but this time logged in)
+            # and the next parameter correctly set.
+            return_url = url_path_join(self.request.protocol + "://" + self.request.host,
+                                        self.base_url, "/hub/saml_login")
+            next_url = self.get_argument('next', '')
+            return_url = url_concat(return_url, {'next': next_url})
+
+            return self.redirect(auth.login(return_url))
+        else:
+            self.redirect(self.get_next_url(self.current_user))
 
     async def post(self):
         user = await self.login_user()
+        if not self.get_argument('RelayState', ''):
+            self.log.warning("URL did not contain a RelayState. Aborting login.")
+            raise web.HTTPError(400, log_message="Attempted login without RelayState parameter.")
         if user is None:
+            self.log.warning("Invalid login attempt.")
             raise web.HTTPError(403)
-        self.redirect(self.get_next_url(user))
+
+        # register current user for subsequent requests to user (e.g. logging the request)
+        self._jupyterhub_user = user
+
+        self.redirect(self.get_argument('RelayState'))
 
 # class SAMLLogoutHandler(BaseHandler):
 #     def get(self):
